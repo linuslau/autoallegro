@@ -1,0 +1,3 @@
+Without this file, dependency folder won't be displayed in git status.
+Without dependency folder, while trying to use installer_w_console.bat or installer_wo_console.bat
+there will be an dependency error. can't find this folder
