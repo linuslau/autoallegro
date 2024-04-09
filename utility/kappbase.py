@@ -268,7 +268,7 @@ class Config_Dialog_Mgr(QDialog):
 
     def load_dcfx_file(self):
         opened_file_path = ''
-        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "Excel Files (*.dcfx);;All files (*.*)")
+        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "DCFX Files (*.dcfx);;All files (*.*)")
         logger.info('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
         opened_file_path = file_dialog_opened_file_path[0]
         self.dcfx_path = opened_file_path
