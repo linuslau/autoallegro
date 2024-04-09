@@ -46,14 +46,14 @@ class KAppBase(object):
         pass
 
     def child_message_handler(self, param_1):
-        print('[main thread] main windows received child signal ' + param_1)
+        logger.info('[main thread] main windows received child signal ' + param_1)
         xlsx_path = param_1
-        print('xlsx_path: ' + xlsx_path)
+        logger.info('xlsx_path: ' + xlsx_path)
         self.kwork_thread.send_work_message([3, xlsx_path])
     def work_thread_signal_handler(self, param_1, param_2, param_3):
 
-        print('[main thread] ui slots received signal id: ' + param_1)
-        print('[main thread] ui slots received signal data: ' + param_2)
+        logger.info('[main thread] ui slots received signal id: ' + param_1)
+        logger.info('[main thread] ui slots received signal data: ' + param_2)
 
         self.id = param_1
         self.data = param_2
@@ -70,7 +70,7 @@ class KAppBase(object):
         if self.id == '1':
             pass
         if self.id == '2':
-            print('handle complete')
+            logger.info('handle complete')
             self.ui.pushButton_2.setEnabled(True)
             self.ui.pushButton_2.setText('Write')
             self.ui.pushButton_2.setStyleSheet("color: black")
@@ -145,7 +145,7 @@ class Button_Mgr:
     def on_button_clicked_modifier(self, a, b, c):
 
         if not self.config_dialog_mgr.dcfx_path or not self.config_dialog_mgr.xlsx_path:
-            print('dcfx or xlsx is null')
+            logger.info('dcfx or xlsx is null')
             if not self.config_dialog_mgr.dcfx_path and not self.config_dialog_mgr.xlsx_path:
                 QMessageBox.information(self.main_window, 'Warning', 'Please configure xlsx/dcfx path.')
             elif not self.config_dialog_mgr.dcfx_path:
@@ -156,7 +156,7 @@ class Button_Mgr:
             pass
         else:
             if self.table_mgr.df is None:
-                print('df is none')
+                logger.info('df is none')
                 return
             if self.table_mgr.df.empty:
                 QMessageBox.information(self.main_window, 'Warning', 'Invalid xlsx format, please select correct xlsx')
@@ -171,10 +171,10 @@ class Button_Mgr:
                     if col == 1 or col == 3:
                         rvp_cus[self.ui.tableWidget.item(row, col).text()] = self.ui.tableWidget.item(row,
                                                                                                       col + 1).text()
-                    print('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
+                    logger.info('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
 
             case_sensitive = self.ui.checkBox.isChecked()
-            print('case_sensitive: ' + str(case_sensitive))
+            logger.info('case_sensitive: ' + str(case_sensitive))
             self.ui.pushButton_2.setEnabled(False)
             self.ui.pushButton_2.setText('Processing...')
             self.ui.pushButton_2.setStyleSheet("color: red")
@@ -209,27 +209,27 @@ class Config_Dialog_Mgr(QDialog):
         self.kwork_thread.send_work_message([4, 'data_4'])
 
     def event(self, event):
-        #print('SubWindow got event type: '+ str(event.type()))
+        #logger.info('SubWindow got event type: '+ str(event.type()))
         if event.type() == QEvent.Show:
-            print("child dialog is shown!")
+            logger.info("child dialog is shown!")
         return super().event(event)
 
     def emit_handler(self, param_1, param_2):
-        print('emit_handler: \n' + param_1 + '\n' + param_2)
+        logger.info('emit_handler: \n' + param_1 + '\n' + param_2)
         self.xlsx_path = self.xlsx_path_old = param_1
         self.dcfx_path = self.dcfx_path_old = param_2
         self.child.plainTextEdit.setPlainText(param_1)
         self.child.plainTextEdit_2.setPlainText(param_2)
         #self.table_mgr.init_table_default()
         if os.path.exists(self.xlsx_path):
-            print("auto load xlsx")
+            logger.info("auto load xlsx")
             self.kwork_thread.send_work_message([3, self.xlsx_path])
         else:
-            print('configured xlsx path does not exist')
+            logger.info('configured xlsx path does not exist')
         pass
 
     def cancel_pressed(self):
-        print('cancel_pressed')
+        logger.info('cancel_pressed')
         if self.xlsx_path_old != self.child.plainTextEdit.toPlainText():
             self.child.plainTextEdit.setPlainText(self.xlsx_path_old)
         if self.dcfx_path_old != self.child.plainTextEdit_2.toPlainText():
@@ -244,31 +244,31 @@ class Config_Dialog_Mgr(QDialog):
         if self.xlsx_path:
             self.signal_child_2_parent.emit(self.xlsx_path)
         else:
-            print('ok button: xlsx_path is null')
+            logger.info('ok button: xlsx_path is null')
         if self.dcfx_path:
             self.kwork_thread.send_work_message([5, self.xlsx_path, self.dcfx_path])
         else:
-            print('ok button: dcfx_path is null')
+            logger.info('ok button: dcfx_path is null')
         '''
     def pushButton_on_click(self):
-        print('pushButton_on_click')
+        logger.info('pushButton_on_click')
         #self.dcfx_path = self.child.plainTextEdit_2.toPlainText()
         self.load_xlsx_file()
 
     def pushButton_2_on_click(self):
-        print('pushButton_2_on_click')
+        logger.info('pushButton_2_on_click')
         self.load_dcfx_file()
 
     def load_dcfx_file(self):
         opened_file_path = ''
         file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "Excel Files (*.dcfx);;All files (*.*)")
-        print('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
+        logger.info('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
         opened_file_path = file_dialog_opened_file_path[0]
         self.dcfx_path = opened_file_path
-        print('opened file: ' + str(opened_file_path))
+        logger.info('opened file: ' + str(opened_file_path))
 
         if len(opened_file_path) == 0:
-            print('No file is selected, do nothing \n')
+            logger.info('No file is selected, do nothing \n')
             return
         else:
             self.child.plainTextEdit_2.setPlainText(opened_file_path)
@@ -280,13 +280,13 @@ class Config_Dialog_Mgr(QDialog):
     def load_xlsx_file(self):
         opened_file_path = ''
         file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "Excel Files (*.xlsx *.xls);;All files (*.*)")
-        print('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
+        logger.info('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
         opened_file_path = file_dialog_opened_file_path[0]
         self.xlsx_path = opened_file_path
-        print('opened file: ' + str(opened_file_path))
+        logger.info('opened file: ' + str(opened_file_path))
 
         if len(opened_file_path) == 0:
-            print('No file is selected, do nothing \n')
+            logger.info('No file is selected, do nothing \n')
             return
         else:
             self.child.plainTextEdit.setPlainText(opened_file_path)
@@ -403,7 +403,7 @@ class Table_Mgr:
 
         pd.set_option('display.max_columns', None)
         pd.set_option('display.width', None)
-        print(self.df)
+        logger.info(self.df)
 
         self.ui.tableWidget.setRowCount(nRows)
         # self.ui.tableWidget.setColumnCount(nColumns)
@@ -412,7 +412,7 @@ class Table_Mgr:
         columns = selected_columns or self.df.columns.values
 
         for idx, col in enumerate(columns):
-            print(col)
+            logger.info(col)
             if 'Unnamed' in col:
                 columns[idx] = ''
 

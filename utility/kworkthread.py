@@ -41,28 +41,28 @@ class KWorkThread(QThread):
 
     def _run(self):
         while True:
-            print('\n[working thread]...Waiting for new msg...\n')
+            logger.info('\n[working thread]...Waiting for new msg...\n')
             msg = self.queue.get()
-            print('Receiving a new msg')
-            print('=========================')
-            print('content: ' + str(msg))
+            logger.info('Receiving a new msg')
+            logger.info('=========================')
+            logger.info('content: ' + str(msg))
 
             if len(msg) == 2 or len(msg) == 3 or len(msg) == 4:
-                print('msg id: ' + str(msg[0]))
-                print('msg data: ' + str(msg[1]))
+                logger.info('msg id: ' + str(msg[0]))
+                logger.info('msg data: ' + str(msg[1]))
                 if msg[0] == 0:
-                    print('working thread handle msg: ' + str(msg[0]))
+                    logger.info('working thread handle msg: ' + str(msg[0]))
                     self.signal_to_ui.emit(str(msg[0]), 'signal_0', None)
-                    print('emit signal back msg id: ' + str(msg[0]))
+                    logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 1:
-                    print('working thread handle msg: ' + str(msg[0]))
+                    logger.info('working thread handle msg: ' + str(msg[0]))
                     self.signal_to_ui.emit(str(msg[0]), 'signal_1', None)
-                    print('emit signal back msg id: ' + str(msg[0]))
+                    logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 2:
                     try:
-                        print('working thread handle msg: ' + str(msg[0]))
+                        logger.info('working thread handle msg: ' + str(msg[0]))
 
                         file_org = msg[3]
                         now = datetime.datetime.now()
@@ -84,35 +84,35 @@ class KWorkThread(QThread):
 
                         kfile = KFile(file_mod)
                         case_sensitive = msg[2]
-                        print('case_sensitive: ' + str(case_sensitive))
+                        logger.info('case_sensitive: ' + str(case_sensitive))
                         if case_sensitive:
-                            print('case_sensitive, yes')
+                            logger.info('case_sensitive, yes')
                             kfile.replace(checkWords, repWords, True)
                         else:
-                            print('case_sensitive, no')
+                            logger.info('case_sensitive, no')
                             kfile.replace(checkWords, repWords)
 
                         self.signal_to_ui.emit(str(msg[0]), 'signal_2', 1)
-                        print('emit signal back msg id: ' + str(msg[0]))
+                        logger.info('emit signal back msg id: ' + str(msg[0]))
                     except Exception as e:
-                        print('Exception: ' + str(e))
+                        logger.info('Exception: ' + str(e))
                         self.signal_to_ui.emit(str(msg[0]), 'signal_2', 0)
-                        print('emit signal back msg id: ' + str(msg[0]))
+                        logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 3:
-                    print('working thread handle msg: ' + str(msg[0]))
+                    logger.info('working thread handle msg: ' + str(msg[0]))
 
                     if os.path.exists(msg[1]):
                         try:
                             df = pd.read_excel(msg[1], sheet_name='Netname list', header=1)
                         except Exception as e:
-                            print('Exception: ' + str(e))
+                            logger.info('Exception: ' + str(e))
                             df = pd.DataFrame()
                     else:
                         df = pd.DataFrame()
                         pass
                     self.signal_to_ui.emit(str(msg[0]), 'signal_3', df)
-                    print('emit signal back msg id: ' + str(msg[0]))
+                    logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 4:
 
@@ -122,7 +122,7 @@ class KWorkThread(QThread):
 
                     if not os.path.exists(ini_file):
                         self.create_default_ini(ini_file)
-                        print(f"Created {ini_file} with default configuration.")
+                        logger.info(f"Created {ini_file} with default configuration.")
                     else:
                         config = configparser.ConfigParser()
                         config.read("config.ini")
@@ -142,7 +142,7 @@ class KWorkThread(QThread):
                     pass
 
             self.queue.task_done()
-            print('=========================')
+            logger.info('=========================')
 
     def create_default_ini(self, file_path):
         config = configparser.ConfigParser()
