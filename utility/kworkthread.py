@@ -103,27 +103,31 @@ class KWorkThread(QThread):
                     logger.info('working thread handle msg: ' + str(msg[0]))
 
                     if os.path.exists(msg[1]):
+                        logger.info('xlsx exist yes')
                         try:
                             df = pd.read_excel(msg[1], sheet_name='Netname list', header=1)
                         except Exception as e:
                             logger.info('Exception: ' + str(e))
                             df = pd.DataFrame()
                     else:
+                        logger.info('xlsx exist no')
                         df = pd.DataFrame()
                         pass
                     self.signal_to_ui.emit(str(msg[0]), 'signal_3', df)
                     logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 4:
-
+                    logger.info('msg = 4, create/read config.ini')
                     ini_file = './config.ini'
                     xlsx_path = ''
                     dcfx_path = ''
 
                     if not os.path.exists(ini_file):
+                        logger.info('config.ini exist no')
                         self.create_default_ini(ini_file)
                         logger.info(f"Created {ini_file} with default configuration.")
                     else:
+                        logger.info('config.ini exist yes')
                         config = configparser.ConfigParser()
                         config.read("config.ini")
 
@@ -133,6 +137,7 @@ class KWorkThread(QThread):
                     self.signal_to_config_dialog.emit(xlsx_path, dcfx_path)
 
                 if msg[0] == 5:
+                    logger.info('msg = 5, call write_to_ini')
                     ini_file = './config.ini'
                     xlsx_path = ''
                     dcfx_path = ''
@@ -145,6 +150,7 @@ class KWorkThread(QThread):
             logger.info('=========================')
 
     def create_default_ini(self, file_path):
+        logger.info('create_default_ini enter')
         config = configparser.ConfigParser()
         config['file_path'] = {
             'xlsx': '',
@@ -154,7 +160,10 @@ class KWorkThread(QThread):
         with open(file_path, 'w') as configfile:
             config.write(configfile)
 
+        logger.info('create_default_ini exit')
+
     def write_to_ini(self, file_path, xlsx_value, dcfx_value):
+        logger.info('write_to_ini enter')
         config = configparser.ConfigParser()
         config.read(file_path)
 
@@ -164,3 +173,4 @@ class KWorkThread(QThread):
 
         with open(file_path, 'w') as configfile:
             config.write(configfile)
+        logger.info('write_to_ini exit')

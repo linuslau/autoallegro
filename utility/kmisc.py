@@ -19,10 +19,10 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def function_enter():
-    print('--> Enter function: ' + inspect.stack()[1][3])
+    logger.info('--> Enter function: ' + inspect.stack()[1][3])
 
 def function_exit():
-    print('<-- Exit function: ' + inspect.stack()[1][3])
+    logger.info('<-- Exit function: ' + inspect.stack()[1][3])
     print('')
 
 def function_enter_w_time():

@@ -17,7 +17,7 @@ class KAppBase(object):
         self.mainwindow = MainWindow
         self.splash_check()
 
-        self.mainwindow.setWindowTitle('AutoAllegro v0.2')
+        self.mainwindow.setWindowTitle('AutoAllegro v0.2.1')
 
         self.kwork_thread = KWorkThread()
         self.kwork_thread.start()
@@ -204,7 +204,7 @@ class Config_Dialog_Mgr(QDialog):
         self.child=cfg_ui_dialog.Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
         self.setWindowTitle('Configure')
-        #self.child.label.setText("AutoAllegro (v0.2, Build 1)")
+        #self.child.label.setText("AutoAllegro (v0.2.1, Build 1)")
 
         self.ui.actionConfigure.triggered['bool'].connect(self.exec)
         self.child.buttonBox.accepted.connect(self.ok_pressed)
@@ -310,7 +310,7 @@ class about_dialog_mgr(QDialog):
         self.child=Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
         self.setWindowTitle('About AutoAllegro')
-        self.child.label.setText("AutoAllegro (v0.2, Build 1)")
+        self.child.label.setText("AutoAllegro (v0.2.1, Build 1)")
         self.child.label_2.setText("liukezhao@gmail.com")
         self.child.label_3.setText("<A href='https://autoallegro.html'>https://autoallegro.html</a>")
         self.child.label_3.setOpenExternalLinks(True)
@@ -383,9 +383,10 @@ class Table_Mgr:
 
     def init_table_default(self, selected_columns=[]):
         #self.df = pd.read_excel(r'LNL+T4+2230+PCIe4+CNVio3.xlsx', sheet_name='Netname list', header=1)
-
+        logger.info('init_table_default enter')
         # Display an empty table
         if self.df.empty:
+            logger.info('iself.df.empty, return')
             #self.ui.tableWidget.clearContents()
             self.ui.tableWidget.clear()
             self.ui.tableWidget.setRowCount(0)
@@ -455,7 +456,7 @@ class Table_Mgr:
         self.ui.tableWidget.horizontalHeader().setSectionsMovable(True)
 
         self.ui.tableWidget.resizeColumnsToContents()
-
+        logger.info('init_table_default exit')
 
 
 
