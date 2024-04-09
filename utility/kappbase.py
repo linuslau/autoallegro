@@ -34,6 +34,8 @@ class KAppBase(object):
         self.about_dialog_mgr = about_dialog_mgr(ui)
         self.config_dialog_mgr.signal_child_2_parent.connect(self.child_message_handler)
 
+        self.ui.actionTool_Log.triggered['bool'].connect(self.open_log_folder)
+
         pass
 
     def __del__(self):
@@ -44,6 +46,11 @@ class KAppBase(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def open_log_folder(self):
+        logger.info(KLogger.debug_log_path_full)
+        cmd = 'explorer /select,' + KLogger.debug_log_path_full
+        os.system(cmd)
 
     def child_message_handler(self, param_1):
         logger.info('[main thread] main windows received child signal ' + param_1)

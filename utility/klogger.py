@@ -15,7 +15,9 @@ class KLogger(object):
     cv_saved_log_name = ''
     cv_log_level = ''
     logger_level_dic = {'NOTSET':logging.NOTSET, 'DEBUG':logging.DEBUG, 'INFO':logging.INFO, 'WARN':logging.WARN, 'WARNING':logging.WARNING, 'ERROR':logging.ERROR, 'FATAL':logging.FATAL, 'CRITICAL':logging.CRITICAL}
-    def __init__(self, logger_name='', log_level = '', logger_file_name = '', app_name = 'GenericSW',  log_cate='genericSw'):
+    debug_log_path = ''
+    debug_log_path_full = ''
+    def __init__(self, logger_name='', log_level = '', logger_file_name = '', app_name = 'AutoAllegro',  log_cate='AutoAllegro'):
         '''
             指定保存日志的文件路径，日志级别，以及调用文件
             将日志存入到指定的文件中
@@ -48,7 +50,11 @@ class KLogger(object):
                 if not os.path.exists(file_dir):
                     os.makedirs(file_dir)
                 self.log_path = file_dir
+                if not KLogger.debug_log_path:
+                    KLogger.debug_log_path = file_dir
                 self.saved_log_name = self.log_path + "\\" + log_cate + "_" + self.log_time + '.log'
+                if not KLogger.debug_log_path_full:
+                    KLogger.debug_log_path_full = self.saved_log_name
                 KLogger.cv_saved_log_name = self.saved_log_name
                 print('set global KLogger.cv_saved_log_name')
                 print(KLogger.cv_saved_log_name)
