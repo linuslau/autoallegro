@@ -17,7 +17,7 @@ class KLogger(object):
     logger_level_dic = {'NOTSET':logging.NOTSET, 'DEBUG':logging.DEBUG, 'INFO':logging.INFO, 'WARN':logging.WARN, 'WARNING':logging.WARNING, 'ERROR':logging.ERROR, 'FATAL':logging.FATAL, 'CRITICAL':logging.CRITICAL}
     debug_log_path = ''
     debug_log_path_full = ''
-    def __init__(self, logger_name='', log_level = '', logger_file_name = '', app_name = 'AutoAllegro',  log_cate='AutoAllegro'):
+    def __init__(self, logger_name='', log_level = '', logger_file_name = '', app_name = 'NetlistAutoMapper',  log_cate='NetlistAutoMapper'):
         '''
             指定保存日志的文件路径，日志级别，以及调用文件
             将日志存入到指定的文件中

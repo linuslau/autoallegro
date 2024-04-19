@@ -17,7 +17,7 @@ class KAppBase(object):
         self.mainwindow = MainWindow
         self.splash_check()
 
-        self.mainwindow.setWindowTitle('AutoAllegro v0.2.1')
+        self.mainwindow.setWindowTitle('NetlistAutoMapper v0.2.1')
 
         self.kwork_thread = KWorkThread()
         self.kwork_thread.start()
@@ -25,7 +25,7 @@ class KAppBase(object):
 
         self.ui_mgr = UI_Mgr(MainWindow)
         self.ui_mgr.splash_check()
-        self.software_mgr = Software_Mgr('autoallegro', 'AutoAllegro', MainWindow)
+        self.software_mgr = Software_Mgr('NetlistAutoMapper', 'NetlistAutoMapper', MainWindow)
         self.software_mgr.check_software_version_background(self.ui_mgr)
         self.table_mgr = Table_Mgr(ui, MainWindow, self.kwork_thread)
         self.config_dialog_mgr = Config_Dialog_Mgr(ui, self.kwork_thread, self.table_mgr)
@@ -110,7 +110,7 @@ class UI_Mgr:
         # self.main_window.statusBar().showMessage("https://vmio.vip")
         # creating a label widget
         self.label_in_status_bar = QLabel("Label Status Bar")
-        self.label_in_status_bar.setText("<A href='https://autoallegro.html'>https://autoallegro.html</a>")
+        self.label_in_status_bar.setText("<A href='https://NetlistAutoMapper.html'>https://NetlistAutoMapper.html</a>")
         self.label_in_status_bar.setOpenExternalLinks(True)
         # adding label to status bar
         self.main_window.statusBar().addPermanentWidget(self.label_in_status_bar)
@@ -204,7 +204,7 @@ class Config_Dialog_Mgr(QDialog):
         self.child=cfg_ui_dialog.Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
         self.setWindowTitle('Configure')
-        #self.child.label.setText("AutoAllegro (v0.2.1, Build 1)")
+        #self.child.label.setText("NetlistAutoMapper (v0.2.1, Build 1)")
 
         self.ui.actionConfigure.triggered['bool'].connect(self.exec)
         self.child.buttonBox.accepted.connect(self.ok_pressed)
@@ -309,12 +309,12 @@ class about_dialog_mgr(QDialog):
         self.ui = ui
         self.child=Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
-        self.setWindowTitle('About AutoAllegro')
-        self.child.label.setText("AutoAllegro (v0.2.1, Build 1)")
+        self.setWindowTitle('About NetlistAutoMapper')
+        self.child.label.setText("NetlistAutoMapper (v0.2.1, Build 1)")
         self.child.label_2.setText("liukezhao@gmail.com")
-        self.child.label_3.setText("<A href='https://autoallegro.html'>https://autoallegro.html</a>")
+        self.child.label_3.setText("<A href='https://NetlistAutoMapper.html'>https://NetlistAutoMapper.html</a>")
         self.child.label_3.setOpenExternalLinks(True)
-        self.child.label_3.setToolTip("https:/autoallegro.html")
+        self.child.label_3.setToolTip("https:/NetlistAutoMapper.html")
 
         filename_about_icon = resource_path(os.path.join("icon", "logo_about.png"))
         pixmap = QPixmap(filename_about_icon)
