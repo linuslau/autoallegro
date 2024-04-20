@@ -104,16 +104,17 @@ class KWorkThread(QThread):
                         logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 3:
-                    file_name = msg[1]
-                    sheetNames = self.get_all_sheets(file_name)
+                    self.file_name = msg[1]
+                    sheetNames = self.get_all_sheets(self.file_name)
                     # skip 1st sheet per requirement
                     sheetNames = sheetNames[1:]
-                    if len(sheetNames) > 1:
-                        sheetName = sheetNames[0]
-                    else:
-                        sheetName = ''
-                    df = self.get_sheet_df(file_name, sheetName)
-                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', [sheetNames, df])
+
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', sheetNames)
+
+                if msg[0] == 6:
+                    sheetName = msg[1]
+                    df = self.get_sheet_df(self.file_name, sheetName)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_6', df)
 
                 if msg[0] == 4:
                     xlsx_path, dcfx_path = self.get_xlsx_dcfx_from_ini()

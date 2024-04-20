@@ -88,15 +88,28 @@ class KAppBase(object):
 
         if self.id == '3':
 
-            sheetNames = self.data2[0]
-            df = self.data2[1]
+            sheetNames = self.data2
             self.ui.comboBox_3.clear()
             for name in sheetNames:
                 self.ui.comboBox_3.addItem(name)
 
+            self.table_mgr.set_signal_connect()
+
+            if len(sheetNames) > 1:
+                sheetName = sheetNames[0]
+            else:
+                sheetName = ''
+
+            self.kwork_thread.send_work_message([6, sheetName])
+
+            pass
+
+        if self.id == '6':
+            df = self.data2
             self.table_mgr.df = df
             self.table_mgr.init_table_default()
             #self.table_mgr.init_table_reference()
+
 
             pass
 
@@ -363,7 +376,13 @@ class Table_Mgr:
         #self.init_table_default()
         #self.kwork_thread.send_work_message([3, 'data_3'])
 
-
+    def set_signal_connect(self):
+        self.ui.comboBox_3.currentIndexChanged.connect(self.selectionChange)
+    def selectionChange(self, i):
+        #打印被选中下拉框的内容
+        print('current index', i, 'selection changed', self.ui.comboBox_3.currentText())
+        self.kwork_thread.send_work_message([6, self.ui.comboBox_3.currentText()])
+        pass
 
     def init_table(self):
         nRows = 10
