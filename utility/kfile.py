@@ -2,7 +2,7 @@ from utility.klogger import KLogger
 import re
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 
 class KFile(object):

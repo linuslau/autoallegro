@@ -161,3 +161,4 @@ cython_debug/
 
 # kz
 config.ini
+.vscode

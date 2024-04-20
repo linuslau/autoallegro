@@ -12,7 +12,7 @@ import threading
 from PyQt5.QtWidgets import *
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 class Software_Mgr:
     proxiesY = {

@@ -4,7 +4,7 @@ import os
 from utility.klogger import KLogger
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 # reference start
 REG_PATH = r"Control Panel\Mouse"

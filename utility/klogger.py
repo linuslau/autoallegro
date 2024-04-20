@@ -134,5 +134,5 @@ class KLogger(object):
 
         return self.logger_level
 
-    def getlog(self):
+    def getlogger(self):
         return self.logger

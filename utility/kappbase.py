@@ -11,7 +11,6 @@ import pandas as pd
 import numpy as np
 
 class KAppBase(object):
-    pass
     def __init__(self, ui, MainWindow):
         self.ui = ui
         self.mainwindow = MainWindow
@@ -21,14 +20,14 @@ class KAppBase(object):
 
         self.kwork_thread = KWorkThread()
         self.kwork_thread.start()
-        self.kwork_thread.signal_to_ui.connect(self.work_thread_signal_handler)
+        self.kwork_thread.signal_to_main_ui.connect(self.work_thread_signal_handler)
 
         self.ui_mgr = UI_Mgr(MainWindow)
         self.ui_mgr.splash_check()
         self.software_mgr = Software_Mgr('NetlistAutoMapper', 'NetlistAutoMapper', MainWindow)
         self.software_mgr.check_software_version_background(self.ui_mgr)
         self.table_mgr = Table_Mgr(ui, MainWindow, self.kwork_thread)
-        self.config_dialog_mgr = Config_Dialog_Mgr(ui, self.kwork_thread, self.table_mgr)
+        self.config_dialog_mgr = Config_Dialog_Mgr(self)
         self.button_mgr = Button_Mgr(ui, MainWindow, self.kwork_thread, self.config_dialog_mgr, self.table_mgr)
         self.icon_mgr = Icon_Mgr(ui, MainWindow)
         self.about_dialog_mgr = about_dialog_mgr(ui)
@@ -88,8 +87,17 @@ class KAppBase(object):
                 return
 
         if self.id == '3':
-            self.table_mgr.df = self.data2
+
+            sheetNames = self.data2[0]
+            df = self.data2[1]
+            self.ui.comboBox_3.clear()
+            for name in sheetNames:
+                self.ui.comboBox_3.addItem(name)
+
+            self.table_mgr.df = df
             self.table_mgr.init_table_default()
+            #self.table_mgr.init_table_reference()
+
             pass
 
     def splash_check(self):
@@ -196,11 +204,11 @@ class Config_Dialog_Mgr(QDialog):
     xlsx_path_old = ''
     dcfx_path_old = ''
     signal_child_2_parent = pyqtSignal(str)
-    def __init__(self, ui, kwork_thread, table_mgr):
+    def __init__(self, kappbase):
         QDialog.__init__(self)
-        self.kwork_thread = kwork_thread
-        self.ui = ui
-        self.table_mgr = table_mgr
+        self.kwork_thread = kappbase.kwork_thread
+        self.ui = kappbase.ui
+        self.table_mgr = kappbase.table_mgr
         self.child=cfg_ui_dialog.Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
         self.setWindowTitle('Configure')
@@ -355,7 +363,7 @@ class Table_Mgr:
         #self.init_table_default()
         #self.kwork_thread.send_work_message([3, 'data_3'])
 
-        self.ui.comboBox_3.addItem('LNL+T4+2230+PCIe4+CNVio3')
+
 
     def init_table(self):
         nRows = 10
@@ -381,12 +389,37 @@ class Table_Mgr:
 
         pass
 
+    # This is a good reference, it will show original table without any change.
+    def init_table_reference(self, selected_columns=[]):
+
+        nRows = len(self.df.index)
+        nColumns = len(selected_columns) or len(self.df.columns)
+        self.ui.tableWidget.setRowCount(nRows)
+        self.ui.tableWidget.setColumnCount(nColumns)
+
+        # Display an empty table
+        if self.df.empty:
+            self.ui.tableWidget.clearContents()
+            return
+
+        self.ui.tableWidget.setHorizontalHeaderLabels(selected_columns or self.df.columns)
+        self.ui.tableWidget.setVerticalHeaderLabels(self.df.index.astype(str))
+
+        for row in range(self.ui.tableWidget.rowCount()):
+            for col in range(self.ui.tableWidget.columnCount()):
+                item = QTableWidgetItem(str(self.df.iat[row, col]))
+                self.ui.tableWidget.setItem(row, col, item)
+        # Enable sorting on the table
+        self.ui.tableWidget.setSortingEnabled(True)
+        # Enable column moving by drag and drop
+        self.ui.tableWidget.horizontalHeader().setSectionsMovable(True)
+
     def init_table_default(self, selected_columns=[]):
         #self.df = pd.read_excel(r'LNL+T4+2230+PCIe4+CNVio3.xlsx', sheet_name='Netname list', header=1)
         logger.info('init_table_default enter')
         # Display an empty table
         if self.df.empty:
-            logger.info('iself.df.empty, return')
+            logger.info('self.df.empty, return')
             #self.ui.tableWidget.clearContents()
             self.ui.tableWidget.clear()
             self.ui.tableWidget.setRowCount(0)
@@ -395,22 +428,27 @@ class Table_Mgr:
 
         self.ui.tableWidget.clearContents()
 
-        self.df = self.df.drop(self.df.columns[0], axis=1)
+        #self.df = self.df.drop(self.df.columns[0], axis=1)
         nRows = len(self.df.index)
         nColumns = len(selected_columns) or len(self.df.columns)
+
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        logger.info(self.df)
+
+        columns = selected_columns or self.df.columns.values
 
         delCols = []
         for col in range(nColumns):
             if col == 0:
                 continue
-            item_str = str(self.df.iat[0, col])
-            if item_str != 'Net Names on RVP' and item_str != 'Net Names on customer design':
+            item_str = columns[col]
+            if 'Net Names on RVP' not in item_str and 'Net Names on customer design' not in item_str:
                 delCols.append(col)
+
         for idx, col in enumerate(delCols):
             self.df = self.df.drop(self.df.columns[col - idx], axis=1)
 
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.width', None)
         logger.info(self.df)
 
         self.ui.tableWidget.setRowCount(nRows)
@@ -457,8 +495,6 @@ class Table_Mgr:
 
         self.ui.tableWidget.resizeColumnsToContents()
         logger.info('init_table_default exit')
-
-
 
     def test_excel(self):
         import openpyxl

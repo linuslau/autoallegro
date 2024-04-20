@@ -5,7 +5,7 @@ from utility.klogger import KLogger
 from utility.kappbase import *
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 if __name__ == '__main__':
     try:

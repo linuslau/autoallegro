@@ -9,7 +9,7 @@ from utility.klogger import *
 current_milli_time =lambda: int(round(time.time()* 1000))
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 def resource_path(relative_path):
     if getattr(sys, 'frozen', False):  # 是否Bundle Resource 捆绑资源

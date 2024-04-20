@@ -5,7 +5,7 @@ from utility.kmisc import *
 from utility.klogger import KLogger
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 class Run_Powershell:
     def __init__(self):
         pass

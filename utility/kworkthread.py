@@ -1,6 +1,7 @@
 
 from utility.klogger import *
 from utility.kfile import *
+from utility.kxlsx import *
 import shutil
 import datetime
 import re
@@ -14,10 +15,11 @@ from queue import Queue
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QDateTime, QObject
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 class KWorkThread(QThread):
-    signal_to_ui = pyqtSignal(str, str, object)
+    NetList_Table = r'Netlist comparision table.xlsx'
+    signal_to_main_ui = pyqtSignal(str, str, object)
     signal_to_config_dialog = pyqtSignal(str,str)
     def __init__(self):
         super().__init__()
@@ -40,6 +42,8 @@ class KWorkThread(QThread):
             logger.error('Exception: working thread got error!!!', exc_info=True)
 
     def _run(self):
+        #import debugpy
+        #debugpy.debug_this_thread()
         while True:
             logger.info('\n[working thread]...Waiting for new msg...\n')
             msg = self.queue.get()
@@ -52,12 +56,12 @@ class KWorkThread(QThread):
                 logger.info('msg data: ' + str(msg[1]))
                 if msg[0] == 0:
                     logger.info('working thread handle msg: ' + str(msg[0]))
-                    self.signal_to_ui.emit(str(msg[0]), 'signal_0', None)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_0', None)
                     logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 1:
                     logger.info('working thread handle msg: ' + str(msg[0]))
-                    self.signal_to_ui.emit(str(msg[0]), 'signal_1', None)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_1', None)
                     logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 2:
@@ -92,48 +96,29 @@ class KWorkThread(QThread):
                             logger.info('case_sensitive, no')
                             kfile.replace(checkWords, repWords)
 
-                        self.signal_to_ui.emit(str(msg[0]), 'signal_2', 1)
+                        self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
                         logger.info('emit signal back msg id: ' + str(msg[0]))
                     except Exception as e:
                         logger.info('Exception: ' + str(e))
-                        self.signal_to_ui.emit(str(msg[0]), 'signal_2', 0)
+                        self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 0)
                         logger.info('emit signal back msg id: ' + str(msg[0]))
 
                 if msg[0] == 3:
-                    logger.info('working thread handle msg: ' + str(msg[0]))
-
-                    if os.path.exists(msg[1]):
-                        logger.info('xlsx exist yes')
-                        try:
-                            df = pd.read_excel(msg[1], sheet_name='Netname list', header=1)
-                        except Exception as e:
-                            logger.info('Exception: ' + str(e))
-                            df = pd.DataFrame()
+                    file_name = msg[1]
+                    sheetNames = self.get_all_sheets(file_name)
+                    # skip 1st sheet per requirement
+                    sheetNames = sheetNames[1:]
+                    if len(sheetNames) > 1:
+                        sheetName = sheetNames[0]
                     else:
-                        logger.info('xlsx exist no')
-                        df = pd.DataFrame()
-                        pass
-                    self.signal_to_ui.emit(str(msg[0]), 'signal_3', df)
-                    logger.info('emit signal back msg id: ' + str(msg[0]))
+                        sheetName = ''
+                    df = self.get_sheet_df(file_name, sheetName)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', [sheetNames, df])
 
                 if msg[0] == 4:
-                    logger.info('msg = 4, create/read config.ini')
-                    ini_file = './config.ini'
-                    xlsx_path = ''
-                    dcfx_path = ''
-
-                    if not os.path.exists(ini_file):
-                        logger.info('config.ini exist no')
-                        self.create_default_ini(ini_file)
-                        logger.info(f"Created {ini_file} with default configuration.")
-                    else:
-                        logger.info('config.ini exist yes')
-                        config = configparser.ConfigParser()
-                        config.read("config.ini")
-
-                        xlsx_path = config.get("file_path", "xlsx")
-                        dcfx_path = config.get("file_path", "dcfx")
-
+                    xlsx_path, dcfx_path = self.get_xlsx_dcfx_from_ini()
+                    if xlsx_path == '':
+                        xlsx_path = os.path.join(os.getcwd(), self.NetList_Table)
                     self.signal_to_config_dialog.emit(xlsx_path, dcfx_path)
 
                 if msg[0] == 5:
@@ -174,3 +159,56 @@ class KWorkThread(QThread):
         with open(file_path, 'w') as configfile:
             config.write(configfile)
         logger.info('write_to_ini exit')
+
+    def get_all_sheets(self, file):
+        sheetnames = ''
+        if os.path.exists(file):
+            logger.info('xlsx exist yes')
+            kxlsx = KXlsx(file)
+            sheetnames = kxlsx.get_all_sheets('wb')
+            pass
+        else:
+            logger.info('xlsx exist no')
+            pass
+
+        return sheetnames
+
+    def get_sheet_df(self, file_name, sheetName):
+        df = None
+        if os.path.exists(file_name) and sheetName != '':
+            logger.info('xlsx exist yes')
+            try:
+                #df = pd.read_excel(file_name, sheet_name=sheetName, header=1)
+                df = pd.read_excel(file_name, sheet_name=sheetName)
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.width', None)
+                logger.info(df)
+                return df
+            except Exception as e:
+                logger.info('Exception: ' + str(e))
+                df = pd.DataFrame()
+                return df
+        else:
+            logger.info('xlsx exist no')
+            df = pd.DataFrame()
+            return df
+            pass
+    def get_xlsx_dcfx_from_ini(self):
+
+        ini_file = './config.ini'
+        xlsx_path = ''
+        dcfx_path = ''
+
+        if not os.path.exists(ini_file):
+            logger.info('config.ini exist no, create a new ini')
+            self.create_default_ini(ini_file)
+            logger.info(f"Created {ini_file} with default configuration.")
+        else:
+            logger.info('config.ini exist yes')
+            config = configparser.ConfigParser()
+            config.read("config.ini")
+
+            xlsx_path = config.get("file_path", "xlsx")
+            dcfx_path = config.get("file_path", "dcfx")
+
+        return xlsx_path, dcfx_path

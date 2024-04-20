@@ -2,7 +2,7 @@ from utility.registry_rw import *
 from utility.klogger import KLogger
 
 klogger = KLogger()
-logger = klogger.getlog()
+logger = klogger.getlogger()
 
 class KAppRegistry(object):
     pass
