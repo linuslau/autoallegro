@@ -1,3 +1,5 @@
+import os.path
+
 from PyQt5.QtGui import QPixmap
 
 from about_ui_qt5 import *
@@ -11,6 +13,7 @@ import pandas as pd
 import numpy as np
 
 class KAppBase(object):
+    NetList_Table = r'Netlist comparision table.xlsx'
     def __init__(self, ui, MainWindow):
         self.ui = ui
         self.mainwindow = MainWindow
@@ -26,14 +29,16 @@ class KAppBase(object):
         self.ui_mgr.splash_check()
         self.software_mgr = Software_Mgr('NetlistAutoMapper', 'NetlistAutoMapper', MainWindow)
         self.software_mgr.check_software_version_background(self.ui_mgr)
-        self.table_mgr = Table_Mgr(ui, MainWindow, self.kwork_thread)
+        self.table_mgr = Table_Mgr(self)
         self.config_dialog_mgr = Config_Dialog_Mgr(self)
         self.button_mgr = Button_Mgr(ui, MainWindow, self.kwork_thread, self.config_dialog_mgr, self.table_mgr)
         self.icon_mgr = Icon_Mgr(ui, MainWindow)
         self.about_dialog_mgr = about_dialog_mgr(ui)
-        self.config_dialog_mgr.signal_child_2_parent.connect(self.child_message_handler)
+
+        self.config_dialog_mgr.sig_cfg_ui_2_main_ui.connect(self.config_dialog_sig_handler)
 
         self.ui.actionTool_Log.triggered['bool'].connect(self.open_log_folder)
+
 
         pass
 
@@ -46,16 +51,17 @@ class KAppBase(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    def config_dialog_sig_handler(self, param_1):
+        logger.info('[main thread] main windows received child signal ' + param_1)
+        xlsx_path = param_1
+        logger.info('xlsx_path: ' + xlsx_path)
+        self.kwork_thread.send_work_message([3, xlsx_path])
+
     def open_log_folder(self):
         logger.info(KLogger.debug_log_path_full)
         cmd = 'explorer /select,' + KLogger.debug_log_path_full
         os.system(cmd)
 
-    def child_message_handler(self, param_1):
-        logger.info('[main thread] main windows received child signal ' + param_1)
-        xlsx_path = param_1
-        logger.info('xlsx_path: ' + xlsx_path)
-        self.kwork_thread.send_work_message([3, xlsx_path])
     def work_thread_signal_handler(self, param_1, param_2, param_3):
 
         logger.info('[main thread] ui slots received signal id: ' + param_1)
@@ -105,11 +111,11 @@ class KAppBase(object):
             pass
 
         if self.id == '6':
+            # update table with Excel content
             df = self.data2
             self.table_mgr.df = df
             self.table_mgr.init_table_default()
             #self.table_mgr.init_table_reference()
-
 
             pass
 
@@ -216,9 +222,12 @@ class Config_Dialog_Mgr(QDialog):
     dcfx_path = ''
     xlsx_path_old = ''
     dcfx_path_old = ''
-    signal_child_2_parent = pyqtSignal(str)
+    folder_path = ''
+    folder_path_old = ''
+    sig_cfg_ui_2_main_ui = pyqtSignal(str)
     def __init__(self, kappbase):
         QDialog.__init__(self)
+        self.kappbase = kappbase
         self.kwork_thread = kappbase.kwork_thread
         self.ui = kappbase.ui
         self.table_mgr = kappbase.table_mgr
@@ -232,9 +241,46 @@ class Config_Dialog_Mgr(QDialog):
         self.child.buttonBox.rejected.connect(self.cancel_pressed)
         self.child.pushButton.clicked.connect(self.pushButton_on_click)
         self.child.pushButton_2.clicked.connect(self.pushButton_2_on_click)
+        self.child.pushButton_3.clicked.connect(self.pushButton_3_on_click)
 
-        self.kwork_thread.signal_to_config_dialog.connect(self.emit_handler)
+        self.child.checkBox_3.stateChanged.connect(self.checkBox_3_stateChanged)
+
+        self.child.pushButton.setEnabled(False)
+        self.child.pushButton_2.setEnabled(False)
+
+        self.child.plainTextEdit.setEnabled(False)
+        self.child.plainTextEdit_2.setEnabled(False)
+        self.child.plainTextEdit.setReadOnly(True)
+        self.child.plainTextEdit_2.setReadOnly(True)
+        # self.child.plainTextEdit_3.setReadOnly(True)
+        self.child.checkBox.setVisible(False)
+        self.child.checkBox_2.setVisible(False)
+
+        self.kwork_thread.sig_to_config_dialog.connect(self.config_dialog_signal_handler)
+        # startup, load and check ini
         self.kwork_thread.send_work_message([4, 'data_4'])
+
+    def checkBox_3_stateChanged(self):
+        if self.child.checkBox_3.isChecked():
+            self.child.plainTextEdit.setEnabled(True)
+            self.child.pushButton.setEnabled(True)
+
+            self.child.plainTextEdit_2.setEnabled(True)
+            self.child.pushButton_2.setEnabled(True)
+
+            self.child.plainTextEdit_3.setEnabled(False)
+            self.child.pushButton_3.setEnabled(False)
+            pass
+        else:
+            self.child.plainTextEdit.setEnabled(False)
+            self.child.pushButton.setEnabled(False)
+
+            self.child.plainTextEdit_2.setEnabled(False)
+            self.child.pushButton_2.setEnabled(False)
+
+            self.child.plainTextEdit_3.setEnabled(True)
+            self.child.pushButton_3.setEnabled(True)
+            pass
 
     def event(self, event):
         #logger.info('SubWindow got event type: '+ str(event.type()))
@@ -242,17 +288,34 @@ class Config_Dialog_Mgr(QDialog):
             logger.info("child dialog is shown!")
         return super().event(event)
 
-    def emit_handler(self, param_1, param_2):
-        logger.info('emit_handler: \n' + param_1 + '\n' + param_2)
+    def config_dialog_signal_handler(self, param_1, param_2, param_3):
+        logger.info('config_dialog_signal_handler: \n' + param_1 + '\n' + param_2 + '\n' + param_3)
         self.xlsx_path = self.xlsx_path_old = param_1
         self.dcfx_path = self.dcfx_path_old = param_2
+        self.folder_path = self.folder_path_old = param_3
         self.child.plainTextEdit.setPlainText(param_1)
         self.child.plainTextEdit_2.setPlainText(param_2)
-        #self.table_mgr.init_table_default()
-        if os.path.exists(self.xlsx_path):
-            logger.info("auto load xlsx")
-            self.kwork_thread.send_work_message([3, self.xlsx_path])
+        self.child.plainTextEdit_3.setPlainText(param_3)
+
+        if self.folder_path == '':
+            logger.info("folder path is empty in ini, check local dir")
+            if os.path.exists(self.kappbase.NetList_Table):
+                logger.info("folder path is empty in ini, table file is present")
+                xlsx_path = os.path.join(os.getcwd(), self.kappbase.NetList_Table)
+            else:
+                logger.info("folder path is empty in ini, table file is NOT present")
+                QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+                self.kappbase.config_dialog_mgr.exec()
+                return
         else:
+            xlsx_path = os.path.join(self.folder_path + '/', self.kappbase.NetList_Table)
+
+        if os.path.exists(xlsx_path):
+            logger.info("load xlsx")
+            self.kwork_thread.send_work_message([3, xlsx_path])
+        else:
+            QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+            self.kappbase.config_dialog_mgr.exec()
             logger.info('configured xlsx path does not exist')
         pass
 
@@ -262,15 +325,41 @@ class Config_Dialog_Mgr(QDialog):
             self.child.plainTextEdit.setPlainText(self.xlsx_path_old)
         if self.dcfx_path_old != self.child.plainTextEdit_2.toPlainText():
             self.child.plainTextEdit_2.setPlainText(self.dcfx_path_old)
+        if self.folder_path_old != self.child.plainTextEdit_3.toPlainText():
+            self.child.plainTextEdit_3.setPlainText(self.folder_path_old)
         pass
     def ok_pressed(self):
+
+        # if folder is set to empty, Excel also should be reset to empty
+        if self.folder_path == '':
+            self.child.plainTextEdit.setPlainText('')
+
         self.xlsx_path = self.xlsx_path_old = self.child.plainTextEdit.toPlainText()
         self.dcfx_path = self.dcfx_path_old = self.child.plainTextEdit_2.toPlainText()
-        self.signal_child_2_parent.emit(self.xlsx_path)
-        self.kwork_thread.send_work_message([5, self.xlsx_path, self.dcfx_path])
+        self.folder_path = self.folder_path_old = self.child.plainTextEdit_3.toPlainText()
+
+        if self.folder_path == '':
+            new_xlsx_path = self.kappbase.NetList_Table
+        else:
+            new_xlsx_path = os.path.join(self.folder_path + '/' + self.kappbase.NetList_Table)
+
+        if os.path.exists(new_xlsx_path):
+            self.sig_cfg_ui_2_main_ui.emit(new_xlsx_path)
+        else:
+            QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+            # Won't take effect, as it is in OK_pressed handler.
+            # self.kappbase.config_dialog_mgr.exec()
+            self.sig_cfg_ui_2_main_ui.emit('')
+
+        # save to ini
+        if self.child.checkBox_3.isChecked():
+            self.kwork_thread.send_work_message([5, self.xlsx_path, self.dcfx_path, self.folder_path])
+        else:
+            self.kwork_thread.send_work_message([5, '', '', self.folder_path])
+        pass
         '''
         if self.xlsx_path:
-            self.signal_child_2_parent.emit(self.xlsx_path)
+            self.sig_cfg_ui_2_main_ui.emit(self.xlsx_path)
         else:
             logger.info('ok button: xlsx_path is null')
         if self.dcfx_path:
@@ -287,9 +376,13 @@ class Config_Dialog_Mgr(QDialog):
         logger.info('pushButton_2_on_click')
         self.load_dcfx_file()
 
+    def pushButton_3_on_click(self):
+        logger.info('pushButton_3_on_click')
+        self.load_xlsx_folder()
+
     def load_dcfx_file(self):
         opened_file_path = ''
-        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "DCFX Files (*.dcfx);;All files (*.*)")
+        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', '', "DCFX Files (*.dcfx);;All files (*.*)")
         logger.info('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
         opened_file_path = file_dialog_opened_file_path[0]
         self.dcfx_path = opened_file_path
@@ -307,7 +400,7 @@ class Config_Dialog_Mgr(QDialog):
             # load_ini_profile(opened_file_path, 'menu')
     def load_xlsx_file(self):
         opened_file_path = ''
-        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', os.getcwd(), "Excel Files (*.xlsx *.xls);;All files (*.*)")
+        file_dialog_opened_file_path = QFileDialog.getOpenFileName(None, 'Select File', '', "Excel Files (*.xlsx *.xls);;All files (*.*)")
         logger.info('opened file dialog file: ' + str(file_dialog_opened_file_path[0]))
         opened_file_path = file_dialog_opened_file_path[0]
         self.xlsx_path = opened_file_path
@@ -323,6 +416,20 @@ class Config_Dialog_Mgr(QDialog):
             last_profile_name = opened_file_path
             # LoadProfile(opened_file_path)
             # load_ini_profile(opened_file_path, 'menu')
+
+    def load_xlsx_folder(self):
+        self.folder_path = QFileDialog.getExistingDirectory(None, 'Select Folder')
+        logger.info('opened file dialog folder: ' + self.folder_path)
+        self.xlsx_path = os.path.join(self.folder_path + '/', self.kappbase.NetList_Table)
+
+        if len(self.folder_path) == 0:
+            logger.info('No Folder is selected, do nothing \n')
+            return
+        else:
+            self.child.plainTextEdit_3.setPlainText(self.folder_path)
+            self.child.plainTextEdit.setPlainText(self.xlsx_path)
+
+        pass
 
 class about_dialog_mgr(QDialog):
     def __init__(self, ui):
@@ -365,11 +472,12 @@ class Icon_Mgr:
 
 
 class Table_Mgr:
-    def __init__(self, ui, main_window, kwork_thread):
-        self.ui = ui
-        self.main_window = main_window
-        self.kwork_thread = kwork_thread
+    def __init__(self, kappbase):
+        self.ui = kappbase.ui
+        self.main_window = kappbase.mainwindow
+        self.kwork_thread = kappbase.kwork_thread
         self.df = None
+
         #self.init_table()
         #self.test_excel()
 
@@ -444,6 +552,8 @@ class Table_Mgr:
             self.ui.tableWidget.setRowCount(0)
             self.ui.tableWidget.horizontalHeader().setVisible(False)
             return
+        else:
+            self.ui.tableWidget.horizontalHeader().setVisible(True)
 
         self.ui.tableWidget.clearContents()
 

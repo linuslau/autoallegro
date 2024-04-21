@@ -81,7 +81,7 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.pushButton.setText(_translate("MainWindow", "Configure"))
-        self.pushButton_2.setText(_translate("MainWindow", "Write"))
+        self.pushButton_2.setText(_translate("MainWindow", "Generate"))
         self.checkBox.setText(_translate("MainWindow", "Case Sensitive"))
         self.menuHelp.setTitle(_translate("MainWindow", "Help"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))

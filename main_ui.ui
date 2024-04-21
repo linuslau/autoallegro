@@ -43,7 +43,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Write</string>
+       <string>Generate</string>
       </property>
      </widget>
     </item>

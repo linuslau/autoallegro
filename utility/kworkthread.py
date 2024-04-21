@@ -20,7 +20,7 @@ logger = klogger.getlogger()
 class KWorkThread(QThread):
     NetList_Table = r'Netlist comparision table.xlsx'
     signal_to_main_ui = pyqtSignal(str, str, object)
-    signal_to_config_dialog = pyqtSignal(str,str)
+    sig_to_config_dialog = pyqtSignal(str, str, str)
     def __init__(self):
         super().__init__()
         self.queue = Queue()
@@ -111,26 +111,24 @@ class KWorkThread(QThread):
 
                     self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', sheetNames)
 
-                if msg[0] == 6:
-                    sheetName = msg[1]
-                    df = self.get_sheet_df(self.file_name, sheetName)
-                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_6', df)
-
                 if msg[0] == 4:
-                    xlsx_path, dcfx_path = self.get_xlsx_dcfx_from_ini()
-                    if xlsx_path == '':
-                        xlsx_path = os.path.join(os.getcwd(), self.NetList_Table)
-                    self.signal_to_config_dialog.emit(xlsx_path, dcfx_path)
+                    folder_path, xlsx_path, dcfx_path = self.get_folder_xlsx_dcfx_from_ini()
+                    self.sig_to_config_dialog.emit(xlsx_path, dcfx_path, folder_path)
 
                 if msg[0] == 5:
                     logger.info('msg = 5, call write_to_ini')
                     ini_file = './config.ini'
-                    xlsx_path = ''
-                    dcfx_path = ''
                     xlsx_path = msg[1]
                     dcfx_path = msg[2]
-                    self.write_to_ini(ini_file, xlsx_path, dcfx_path)
+                    folder_path = msg[3]
+
+                    self.write_to_ini(ini_file, xlsx_path, dcfx_path, folder_path)
                     pass
+
+                if msg[0] == 6:
+                    sheetName = msg[1]
+                    df = self.get_sheet_df(self.file_name, sheetName)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_6', df)
 
             self.queue.task_done()
             logger.info('=========================')
@@ -139,6 +137,7 @@ class KWorkThread(QThread):
         logger.info('create_default_ini enter')
         config = configparser.ConfigParser()
         config['file_path'] = {
+            'folder': '',
             'xlsx': '',
             'dcfx': ''
         }
@@ -148,18 +147,41 @@ class KWorkThread(QThread):
 
         logger.info('create_default_ini exit')
 
-    def write_to_ini(self, file_path, xlsx_value, dcfx_value):
+    def write_to_ini(self, file_path, xlsx_value, dcfx_value, folder_path):
         logger.info('write_to_ini enter')
         config = configparser.ConfigParser()
         config.read(file_path)
 
         # 写入新的值，如果已存在，则覆盖
+        config.set('file_path', 'folder', folder_path)
         config.set('file_path', 'xlsx', xlsx_value)
         config.set('file_path', 'dcfx', dcfx_value)
 
         with open(file_path, 'w') as configfile:
             config.write(configfile)
         logger.info('write_to_ini exit')
+
+    def get_folder_xlsx_dcfx_from_ini(self):
+
+        ini_file = './config.ini'
+        folder_path = ''
+        xlsx_path = ''
+        dcfx_path = ''
+
+        if not os.path.exists(ini_file):
+            logger.info('config.ini exist no, create a new ini')
+            self.create_default_ini(ini_file)
+            logger.info(f"Created {ini_file} with default configuration.")
+        else:
+            logger.info('config.ini exist yes')
+            config = configparser.ConfigParser()
+            config.read("config.ini")
+
+            folder_path = config.get("file_path", "folder")
+            xlsx_path = config.get("file_path", "xlsx")
+            dcfx_path = config.get("file_path", "dcfx")
+
+        return folder_path, xlsx_path, dcfx_path
 
     def get_all_sheets(self, file):
         sheetnames = ''
@@ -194,22 +216,3 @@ class KWorkThread(QThread):
             df = pd.DataFrame()
             return df
             pass
-    def get_xlsx_dcfx_from_ini(self):
-
-        ini_file = './config.ini'
-        xlsx_path = ''
-        dcfx_path = ''
-
-        if not os.path.exists(ini_file):
-            logger.info('config.ini exist no, create a new ini')
-            self.create_default_ini(ini_file)
-            logger.info(f"Created {ini_file} with default configuration.")
-        else:
-            logger.info('config.ini exist yes')
-            config = configparser.ConfigParser()
-            config.read("config.ini")
-
-            xlsx_path = config.get("file_path", "xlsx")
-            dcfx_path = config.get("file_path", "dcfx")
-
-        return xlsx_path, dcfx_path
