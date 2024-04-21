@@ -51,7 +51,7 @@ class KWorkThread(QThread):
             logger.info('=========================')
             logger.info('content: ' + str(msg))
 
-            if len(msg) == 2 or len(msg) == 3 or len(msg) == 4:
+            if len(msg) != 0:
                 logger.info('msg id: ' + str(msg[0]))
                 logger.info('msg data: ' + str(msg[1]))
                 if msg[0] == 0:
@@ -72,9 +72,16 @@ class KWorkThread(QThread):
                         now = datetime.datetime.now()
                         current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
 
-                        file_mod = os.path.splitext(file_org)[0] + '_' + current_time + os.path.splitext(file_org)[1]
+                        file_to_save = msg[4]
+                        if file_to_save != '':
+                            file_mod = file_to_save
+                        else:
+                            file_mod = os.path.splitext(file_org)[0] + '_' + current_time + os.path.splitext(file_org)[1]
 
-                        shutil.copy(file_org, file_mod)
+                        if file_org != file_mod:
+                            shutil.copy(file_org, file_mod)
+                        else:
+                            logger.info('file are the same, do not do copy')
 
                         rvp_cus = msg[1]
 

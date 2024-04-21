@@ -16,10 +16,10 @@ class KAppBase(object):
     NetList_Table = r'Netlist comparision table.xlsx'
     def __init__(self, ui, MainWindow):
         self.ui = ui
-        self.mainwindow = MainWindow
+        self.main_window = MainWindow
         self.splash_check()
 
-        self.mainwindow.setWindowTitle('NetlistAutoMapper v0.2.1')
+        self.main_window.setWindowTitle('NetlistAutoMapper v0.2.1')
 
         self.kwork_thread = KWorkThread()
         self.kwork_thread.start()
@@ -31,7 +31,7 @@ class KAppBase(object):
         self.software_mgr.check_software_version_background(self.ui_mgr)
         self.table_mgr = Table_Mgr(self)
         self.config_dialog_mgr = Config_Dialog_Mgr(self)
-        self.button_mgr = Button_Mgr(ui, MainWindow, self.kwork_thread, self.config_dialog_mgr, self.table_mgr)
+        self.button_mgr = Button_Mgr(self)
         self.icon_mgr = Icon_Mgr(ui, MainWindow)
         self.about_dialog_mgr = about_dialog_mgr(ui)
 
@@ -75,7 +75,7 @@ class KAppBase(object):
 
         status_bar_string = ' ui enqueue->thread dequeue, emit->ui slots get ' + status_bar_string
 
-        self.mainwindow.statusBar().showMessage(status_bar_string, 10000)
+        self.main_window.statusBar().showMessage(status_bar_string, 10000)
 
         if self.id == '0':
             pass
@@ -84,11 +84,11 @@ class KAppBase(object):
         if self.id == '2':
             logger.info('handle complete')
             self.ui.pushButton_2.setEnabled(True)
-            self.ui.pushButton_2.setText('Write')
+            self.ui.pushButton_2.setText('Generate')
             self.ui.pushButton_2.setStyleSheet("color: black")
 
             if str(self.data2) == '0':
-                QMessageBox.information(self.mainwindow, 'Warning', 'Invalid dcfx format, please select correct dcfx')
+                QMessageBox.information(self.main_window, 'Warning', 'Invalid dcfx format, please select correct dcfx')
                 self.config_dialog_mgr.exec()
                 return
 
@@ -99,7 +99,7 @@ class KAppBase(object):
             for name in sheetNames:
                 self.ui.comboBox_3.addItem(name)
 
-            self.table_mgr.set_signal_connect()
+            #self.table_mgr.set_signal_connect()
 
             if len(sheetNames) > 1:
                 sheetName = sheetNames[0]
@@ -156,12 +156,13 @@ class UI_Mgr:
         # splash support close pic end
 
 class Button_Mgr:
-    def __init__(self, ui, main_window, kwork_thread, config_dialog_mgr, table_mgr):
-        self.ui = ui
-        self.main_window = main_window
-        self.kwork_thread = kwork_thread
-        self.config_dialog_mgr = config_dialog_mgr
-        self.table_mgr = table_mgr
+    def __init__(self, kappbase):
+        self.kappbase = kappbase
+        self.ui = kappbase.ui
+        self.main_window = kappbase.main_window
+        self.kwork_thread = kappbase.kwork_thread
+        self.config_dialog_mgr = kappbase.config_dialog_mgr
+        self.table_mgr = kappbase.table_mgr
         self.set_signal_connect()
         #self.ui.pushButton.setEnabled(False)
 
@@ -176,43 +177,76 @@ class Button_Mgr:
         function_exit()
         self.config_dialog_mgr.exec()
         pass
+
+    def save_dcfx_file(self):
+        file_dialog_saved_file_path = QFileDialog.getSaveFileName(None, 'Save File', '', 'DCFX files(*.dcfx)')
+        print('saved file dialog file: ' + str(file_dialog_saved_file_path[0]))
+        saved_file_path = file_dialog_saved_file_path[0]
+        print('saved file (selected): ' + str(saved_file_path))
+
+        if len(saved_file_path) == 0:
+            print('No saved file is selected, do nothing \n')
+            return ""
+        else:
+            print('loaded_profile_ini_config is Not None')
+            return saved_file_path
+
     def on_button_clicked_modifier(self, a, b, c):
 
-        if not self.config_dialog_mgr.dcfx_path or not self.config_dialog_mgr.xlsx_path:
-            logger.info('dcfx or xlsx is null')
-            if not self.config_dialog_mgr.dcfx_path and not self.config_dialog_mgr.xlsx_path:
-                QMessageBox.information(self.main_window, 'Warning', 'Please configure xlsx/dcfx path.')
-            elif not self.config_dialog_mgr.dcfx_path:
-                QMessageBox.information(self.main_window, 'Warning','Please configure dcfx path.')
-            elif not self.config_dialog_mgr.xlsx_path:
-                QMessageBox.information(self.main_window, 'Warning','Please configure xlsx path.')
-            self.config_dialog_mgr.exec()
-            pass
-        else:
-            if self.table_mgr.df is None:
-                logger.info('df is none')
-                return
-            if self.table_mgr.df.empty:
-                QMessageBox.information(self.main_window, 'Warning', 'Invalid xlsx format, please select correct xlsx')
-                self.config_dialog_mgr.exec()
-                return
-            rvp_cus = {}
-            for row in range(self.ui.tableWidget.rowCount()):
-                for col in range(self.ui.tableWidget.columnCount()):
-                    if row == 0:
-                        continue
-                    value = self.ui.tableWidget.item(row, col).text()
-                    if col == 1 or col == 3:
-                        rvp_cus[self.ui.tableWidget.item(row, col).text()] = self.ui.tableWidget.item(row,
-                                                                                                      col + 1).text()
-                    logger.info('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
+        orig_file_path = ''
+        saved_file_path = self.save_dcfx_file()
+        if saved_file_path == '':
+            logger.info('cancelled, do nothing, return')
+            return
 
-            case_sensitive = self.ui.checkBox.isChecked()
-            logger.info('case_sensitive: ' + str(case_sensitive))
-            self.ui.pushButton_2.setEnabled(False)
-            self.ui.pushButton_2.setText('Processing...')
-            self.ui.pushButton_2.setStyleSheet("color: red")
-            self.kwork_thread.send_work_message([2, rvp_cus, case_sensitive, self.config_dialog_mgr.dcfx_path])
+        if not self.config_dialog_mgr.child.checkBox_3.isChecked():
+            orig_file_name = self.table_mgr.dcfx_path + '.dcfx'
+            folder_path = self.config_dialog_mgr.child.plainTextEdit_3.toPlainText()
+            if folder_path == '':
+                orig_file_path = os.path.join(os.getcwd(), orig_file_name)
+            else:
+                orig_file_path = os.path.join(folder_path + '/', orig_file_name)
+            pass
+
+        else:
+            if not self.config_dialog_mgr.dcfx_path or not self.config_dialog_mgr.xlsx_path:
+                logger.info('dcfx or xlsx is null')
+                if not self.config_dialog_mgr.dcfx_path and not self.config_dialog_mgr.xlsx_path:
+                    QMessageBox.information(self.main_window, 'Warning', 'Please configure xlsx/dcfx path.')
+                elif not self.config_dialog_mgr.dcfx_path:
+                    QMessageBox.information(self.main_window, 'Warning','Please configure dcfx path.')
+                elif not self.config_dialog_mgr.xlsx_path:
+                    QMessageBox.information(self.main_window, 'Warning','Please configure xlsx path.')
+                self.config_dialog_mgr.exec()
+                pass
+            else:
+                orig_file_path = self.config_dialog_mgr.dcfx_path
+
+        if self.table_mgr.df is None:
+            logger.info('df is none')
+            return
+        if self.table_mgr.df.empty:
+            QMessageBox.information(self.main_window, 'Warning', 'Invalid xlsx format, please select correct xlsx')
+            self.config_dialog_mgr.exec()
+            return
+        rvp_cus = {}
+        for row in range(self.ui.tableWidget.rowCount()):
+            for col in range(self.ui.tableWidget.columnCount()):
+                if row == 0:
+                    continue
+                value = self.ui.tableWidget.item(row, col).text()
+                if col == 1 or col == 3:
+                    rvp_cus[self.ui.tableWidget.item(row, col).text()] = self.ui.tableWidget.item(row,
+                                                                                                  col + 1).text()
+                logger.info('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
+
+        case_sensitive = self.ui.checkBox.isChecked()
+        logger.info('case_sensitive: ' + str(case_sensitive))
+        self.ui.pushButton_2.setEnabled(False)
+        self.ui.pushButton_2.setText('Processing...')
+        self.ui.pushButton_2.setStyleSheet("color: red")
+
+        self.kwork_thread.send_work_message([2, rvp_cus, case_sensitive, orig_file_path, saved_file_path])
 
         pass
 
@@ -304,7 +338,7 @@ class Config_Dialog_Mgr(QDialog):
                 xlsx_path = os.path.join(os.getcwd(), self.kappbase.NetList_Table)
             else:
                 logger.info("folder path is empty in ini, table file is NOT present")
-                QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+                QMessageBox.information(self.kappbase.main_window, 'Warning', 'Netlist comparision table.xlsx not found')
                 self.kappbase.config_dialog_mgr.exec()
                 return
         else:
@@ -314,7 +348,7 @@ class Config_Dialog_Mgr(QDialog):
             logger.info("load xlsx")
             self.kwork_thread.send_work_message([3, xlsx_path])
         else:
-            QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+            QMessageBox.information(self.kappbase.main_window, 'Warning', 'Netlist comparision table.xlsx not found')
             self.kappbase.config_dialog_mgr.exec()
             logger.info('configured xlsx path does not exist')
         pass
@@ -346,7 +380,7 @@ class Config_Dialog_Mgr(QDialog):
         if os.path.exists(new_xlsx_path):
             self.sig_cfg_ui_2_main_ui.emit(new_xlsx_path)
         else:
-            QMessageBox.information(self.kappbase.mainwindow, 'Warning', 'Netlist comparision table.xlsx not found')
+            QMessageBox.information(self.kappbase.main_window, 'Warning', 'Netlist comparision table.xlsx not found')
             # Won't take effect, as it is in OK_pressed handler.
             # self.kappbase.config_dialog_mgr.exec()
             self.sig_cfg_ui_2_main_ui.emit('')
@@ -474,9 +508,13 @@ class Icon_Mgr:
 class Table_Mgr:
     def __init__(self, kappbase):
         self.ui = kappbase.ui
-        self.main_window = kappbase.mainwindow
+        self.main_window = kappbase.main_window
         self.kwork_thread = kappbase.kwork_thread
         self.df = None
+
+        self.dcfx_path = ''
+
+        self.set_signal_connect()
 
         #self.init_table()
         #self.test_excel()
@@ -489,7 +527,8 @@ class Table_Mgr:
     def selectionChange(self, i):
         #打印被选中下拉框的内容
         print('current index', i, 'selection changed', self.ui.comboBox_3.currentText())
-        self.kwork_thread.send_work_message([6, self.ui.comboBox_3.currentText()])
+        self.dcfx_path = self.ui.comboBox_3.currentText()
+        self.kwork_thread.send_work_message([6, self.dcfx_path])
         pass
 
     def init_table(self):
