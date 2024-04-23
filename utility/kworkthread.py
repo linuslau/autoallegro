@@ -80,6 +80,10 @@ class KWorkThread(QThread):
 
                         if not KFile.is_same_file(file_org, file_mod):
                         #if file_org != file_mod:
+
+                            if not os.path.exists(file_org):
+                                self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
+                                continue
                             shutil.copy(file_org, file_mod)
                             logger.info('file are different, do copy')
                             KFile.remove_readonly_attribute(file_mod)

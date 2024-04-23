@@ -92,6 +92,11 @@ class KAppBase(object):
                 self.config_dialog_mgr.exec()
                 return
 
+            if str(self.data2) == '1':
+                QMessageBox.information(self.main_window, 'Warning', self.table_mgr.dcfx_path + ' is not available.\nPlease check configuration folder')
+                self.config_dialog_mgr.exec()
+                return
+
         if self.id == '3':
 
             sheetNames = self.data2
@@ -298,6 +303,8 @@ class Config_Dialog_Mgr(QDialog):
         self.child.pushButton_3.clicked.connect(self.pushButton_3_on_click)
 
         self.child.checkBox_3.stateChanged.connect(self.checkBox_3_stateChanged)
+        # Disabled first, improve it in the future.
+        self.child.checkBox_3.setEnabled(False)
 
         self.child.pushButton.setEnabled(False)
         self.child.pushButton_2.setEnabled(False)
