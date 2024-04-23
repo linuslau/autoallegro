@@ -78,12 +78,12 @@ class KWorkThread(QThread):
                         else:
                             file_mod = os.path.splitext(file_org)[0] + '_' + current_time + os.path.splitext(file_org)[1]
 
+                        if not os.path.exists(file_org):
+                            self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 2)
+                            continue
+
                         if not KFile.is_same_file(file_org, file_mod):
                         #if file_org != file_mod:
-
-                            if not os.path.exists(file_org):
-                                self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
-                                continue
                             shutil.copy(file_org, file_mod)
                             logger.info('file are different, do copy')
                             KFile.remove_readonly_attribute(file_mod)
@@ -143,9 +143,18 @@ class KWorkThread(QThread):
 
                 if msg[0] == 3:
                     self.file_name = msg[1]
-                    sheetNames = self.get_all_sheets(self.file_name)
-                    # skip 1st sheet per requirement
-                    sheetNames = sheetNames[1:]
+
+                    sheetNames = []
+
+                    try:
+                        sheetNames = self.get_all_sheets(self.file_name)
+                        # skip 1st sheet per requirement
+                        sheetNames = sheetNames[1:]
+
+                    except Exception as e:
+                        logger.info('Exception: ' + str(e))
+                        self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', sheetNames)
+                        logger.info('emit signal back msg id: ' + str(msg[0]))
 
                     self.signal_to_main_ui.emit(str(msg[0]), 'signal_3', sheetNames)
 

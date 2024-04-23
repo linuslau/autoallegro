@@ -83,6 +83,7 @@ class KAppBase(object):
             pass
         if self.id == '2':
             logger.info('handle complete')
+            self.ui.pushButton.setEnabled(True)
             self.ui.pushButton_2.setEnabled(True)
             self.ui.pushButton_2.setText('Generate')
             self.ui.pushButton_2.setStyleSheet("color: black")
@@ -92,7 +93,7 @@ class KAppBase(object):
                 self.config_dialog_mgr.exec()
                 return
 
-            if str(self.data2) == '1':
+            if str(self.data2) == '2':
                 QMessageBox.information(self.main_window, 'Warning', self.table_mgr.dcfx_path + ' is not available.\nPlease check configuration folder')
                 self.config_dialog_mgr.exec()
                 return
@@ -110,6 +111,9 @@ class KAppBase(object):
                 sheetName = sheetNames[0]
             else:
                 sheetName = ''
+                # Pending fix
+                #QMessageBox.information(self.main_window, 'Warning', 'Invalid xlsx format, please select correct xlsx')
+                #self.config_dialog_mgr.exec()
 
             self.kwork_thread.send_work_message([6, sheetName])
 
@@ -267,6 +271,7 @@ class Button_Mgr:
 
         case_sensitive = self.ui.checkBox.isChecked()
         logger.info('case_sensitive: ' + str(case_sensitive))
+        self.ui.pushButton.setEnabled(False)
         self.ui.pushButton_2.setEnabled(False)
         self.ui.pushButton_2.setText('Processing...')
         self.ui.pushButton_2.setStyleSheet("color: red")
@@ -375,7 +380,7 @@ class Config_Dialog_Mgr(QDialog):
             logger.info("load xlsx")
             self.kwork_thread.send_work_message([3, xlsx_path])
         else:
-            QMessageBox.information(self.kappbase.main_window, 'Warning', 'Netlist comparision table.xlsx not found')
+            QMessageBox.information(self.kappbase.main_window, 'Warning', 'Netlist comparision table.xlsx not found.\nPlease check configuration folder.')
             self.kappbase.config_dialog_mgr.exec()
             logger.info('configured xlsx path does not exist')
         pass
