@@ -19,7 +19,7 @@ class KAppBase(object):
         self.main_window = MainWindow
         self.splash_check()
 
-        self.main_window.setWindowTitle('NetlistAutoMapper v0.2.1')
+        self.main_window.setWindowTitle('NetlistAutoMapper v0.3.1')
 
         self.kwork_thread = KWorkThread()
         self.kwork_thread.start()
@@ -507,7 +507,7 @@ class about_dialog_mgr(QDialog):
         self.child=Ui_Dialog()#子窗口的实例化
         self.child.setupUi(self)
         self.setWindowTitle('About NetlistAutoMapper')
-        self.child.label.setText("NetlistAutoMapper (v0.2.1, Build 1)")
+        self.child.label.setText("NetlistAutoMapper (v0.3.1, Build 1)")
         self.child.label_2.setText("liukezhao@gmail.com")
         self.child.label_3.setText("<A href='https://NetlistAutoMapper.html'>https://NetlistAutoMapper.html</a>")
         self.child.label_3.setOpenExternalLinks(True)
