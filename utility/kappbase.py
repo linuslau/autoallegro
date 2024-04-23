@@ -75,7 +75,7 @@ class KAppBase(object):
 
         status_bar_string = ' ui enqueue->thread dequeue, emit->ui slots get ' + status_bar_string
 
-        self.main_window.statusBar().showMessage(status_bar_string, 10000)
+        # self.main_window.statusBar().showMessage(status_bar_string, 10000)
 
         if self.id == '0':
             pass
@@ -97,6 +97,8 @@ class KAppBase(object):
                 QMessageBox.information(self.main_window, 'Warning', self.table_mgr.dcfx_path + ' is not available.\nPlease check configuration folder')
                 self.config_dialog_mgr.exec()
                 return
+
+            self.main_window.statusBar().showMessage('New file generated successfully.', 10000)
 
         if self.id == '3':
 
@@ -274,6 +276,7 @@ class Button_Mgr:
         self.ui.pushButton.setEnabled(False)
         self.ui.pushButton_2.setEnabled(False)
         self.ui.pushButton_2.setText('Processing...')
+        self.main_window.statusBar().showMessage('Processing...', 10000)
         self.ui.pushButton_2.setStyleSheet("color: red")
 
         self.kwork_thread.send_work_message([2, [rvp_cus, type], case_sensitive, orig_file_path, saved_file_path])
