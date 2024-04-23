@@ -83,17 +83,37 @@ class KWorkThread(QThread):
                         else:
                             logger.info('file are the same, do not do copy')
 
-                        rvp_cus = msg[1]
+                        rvp_cus = msg[1][0]
+                        types = msg[1][1]
 
-                        delete = [key for key in rvp_cus if key == '' or rvp_cus[key] == '']
+                        rvp_cus_replace = []
+                        rvp_cus_g_5v = []
+                        rvp_cus_l_5v = []
 
+                        rvp_cus_g_5v_start_idx = types.index(1)
+                        rvp_cus_l_5v_start_idx = types.index(2)
+
+                        rvp_cus_replace = dict(list(rvp_cus.items())[:rvp_cus_g_5v_start_idx - 1])
+                        rvp_cus_g_5v = dict(list(rvp_cus.items())[rvp_cus_g_5v_start_idx : rvp_cus_l_5v_start_idx - 1])
+                        rvp_cus_l_5v = dict(list(rvp_cus.items())[rvp_cus_l_5v_start_idx : len(rvp_cus)])
+
+                        delete = [key for key in rvp_cus_replace if key == '' or rvp_cus_replace[key] == '']
                         for key in delete:
-                            del rvp_cus[key]
+                            del rvp_cus_replace[key]
 
-                        checkWords = rvp_cus.keys()
-                        repWords = rvp_cus.values()
+                        delete = [key for key in rvp_cus_g_5v if key == '' or rvp_cus_g_5v[key] == '']
+                        for key in delete:
+                            del rvp_cus_g_5v[key]
+
+                        delete = [key for key in rvp_cus_l_5v if key == '' or rvp_cus_l_5v[key] == '']
+                        for key in delete:
+                            del rvp_cus_l_5v[key]
+
+                        checkWords = rvp_cus_replace.keys()
+                        repWords = rvp_cus_replace.values()
 
                         kfile = KFile(file_mod)
+
                         case_sensitive = msg[2]
                         logger.info('case_sensitive: ' + str(case_sensitive))
                         if case_sensitive:
@@ -102,6 +122,12 @@ class KWorkThread(QThread):
                         else:
                             logger.info('case_sensitive, no')
                             kfile.replace(checkWords, repWords)
+
+                        addWordsG5V = rvp_cus_g_5v.values()
+                        addWordsL5V = rvp_cus_l_5v.values()
+                        logger.info('>5V: %s', list(addWordsG5V))
+                        logger.info('<5V: %s', list(addWordsL5V))
+                        kfile.add_netnames_vs_5V(addWordsG5V, addWordsL5V)
 
                         self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
                         logger.info('emit signal back msg id: ' + str(msg[0]))

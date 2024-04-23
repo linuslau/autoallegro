@@ -230,15 +230,35 @@ class Button_Mgr:
             self.config_dialog_mgr.exec()
             return
         rvp_cus = {}
+        type = []
+        type_add = 0
         for row in range(self.ui.tableWidget.rowCount()):
+            #if row == 0:
+            #    continue
+            v_header = self.ui.tableWidget.item(row, 0).text()
+            print('v_header ' + str(row) + ' :' + v_header)
+
             for col in range(self.ui.tableWidget.columnCount()):
-                if row == 0:
-                    continue
                 value = self.ui.tableWidget.item(row, col).text()
                 if col == 1 or col == 3:
-                    rvp_cus[self.ui.tableWidget.item(row, col).text()] = self.ui.tableWidget.item(row,
-                                                                                                  col + 1).text()
-                logger.info('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
+                    rvp = self.ui.tableWidget.item(row, col).text()
+                    cus = self.ui.tableWidget.item(row,col + 1).text()
+                    if (rvp not in rvp_cus) and (rvp != '' or cus != ''):
+                        if ('High power rails' in v_header) or (v_header == '' and type_add == 1):
+                            type.append(1)
+                            type_add = 1
+                        elif ('Low power rails' in v_header) or (v_header == '' and type_add == 2):
+                            type.append(2)
+                            type_add = 2
+                        else:
+                            type.append(0)
+                        rvp_cus[rvp] = cus
+
+                    pass
+                #logger.info('row:' + str(row) + ',  col:' + str(col) + '\n' + value)
+
+        for idx, (key, value) in enumerate(rvp_cus.items()):
+            print(key, ': ', value, type[idx])
 
         case_sensitive = self.ui.checkBox.isChecked()
         logger.info('case_sensitive: ' + str(case_sensitive))
@@ -246,7 +266,7 @@ class Button_Mgr:
         self.ui.pushButton_2.setText('Processing...')
         self.ui.pushButton_2.setStyleSheet("color: red")
 
-        self.kwork_thread.send_work_message([2, rvp_cus, case_sensitive, orig_file_path, saved_file_path])
+        self.kwork_thread.send_work_message([2, [rvp_cus, type], case_sensitive, orig_file_path, saved_file_path])
 
         pass
 
