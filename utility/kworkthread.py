@@ -82,6 +82,7 @@ class KWorkThread(QThread):
                         #if file_org != file_mod:
                             shutil.copy(file_org, file_mod)
                             logger.info('file are different, do copy')
+                            KFile.remove_readonly_attribute(file_mod)
                         else:
                             logger.info('file are the same, do not do copy')
 

@@ -1,6 +1,7 @@
 from utility.klogger import KLogger
 import re
 import os
+import win32api, win32con
 
 klogger = KLogger()
 logger = klogger.getlogger()
@@ -20,6 +21,13 @@ class KFile(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def remove_readonly_attribute(file_path):
+        try:
+            win32api.SetFileAttributes(file_path, win32con.FILE_ATTRIBUTE_NORMAL)
+            logger.info('Removed read-only attribute successfully')
+        except Exception as e:
+            logger.info('Removed read-only attribute failed')
 
     def is_same_file(file1, file2):
         norm_file1 = os.path.normpath(file1)
