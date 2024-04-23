@@ -1,5 +1,6 @@
 from utility.klogger import KLogger
 import re
+import os
 
 klogger = KLogger()
 logger = klogger.getlogger()
@@ -19,6 +20,12 @@ class KFile(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def is_same_file(file1, file2):
+        norm_file1 = os.path.normpath(file1)
+        norm_file2 = os.path.normpath(file2)
+
+        return norm_file1 == norm_file2
 
     def replace(self, old_values, new_values, case_sensitive=False):
         f = open(self.file_name, 'r')

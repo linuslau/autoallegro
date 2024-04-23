@@ -78,18 +78,17 @@ class KWorkThread(QThread):
                         else:
                             file_mod = os.path.splitext(file_org)[0] + '_' + current_time + os.path.splitext(file_org)[1]
 
-                        if file_org != file_mod:
+                        if not KFile.is_same_file(file_org, file_mod):
+                        #if file_org != file_mod:
                             shutil.copy(file_org, file_mod)
+                            logger.info('file are different, do copy')
                         else:
                             logger.info('file are the same, do not do copy')
 
                         rvp_cus = msg[1][0]
                         types = msg[1][1]
 
-                        rvp_cus_replace = []
-                        rvp_cus_g_5v = []
-                        rvp_cus_l_5v = []
-
+                        # find first idx of value 1 and value 2
                         rvp_cus_g_5v_start_idx = types.index(1)
                         rvp_cus_l_5v_start_idx = types.index(2)
 
