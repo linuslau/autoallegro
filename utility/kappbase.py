@@ -614,6 +614,13 @@ class Table_Mgr:
         else:
             self.ui.tableWidget.horizontalHeader().setVisible(True)
 
+        # does not work this way
+        #self.ui.tableWidget.horizontalHeader().setStyleSheet("background-color: blue")
+        #self.ui.tableWidget.verticalHeader().setStyleSheet("background-color: brown")
+
+        stylesheet = "::section{Background-color:rgb(120,225,255)}"
+        self.ui.tableWidget.horizontalHeader().setStyleSheet(stylesheet)
+
         self.ui.tableWidget.clearContents()
 
         #self.df = self.df.drop(self.df.columns[0], axis=1)
@@ -676,6 +683,9 @@ class Table_Mgr:
 
                 item = QTableWidgetItem(item_str)
                 self.ui.tableWidget.setItem(row, col, item)
+                if col == 0:
+                    self.ui.tableWidget.item(row, col).setBackground(QtGui.QColor(235, 235, 150))
+
         # Enable sorting on the table
         # self.ui.tableWidget.setSortingEnabled(True)
         # Enable column moving by drag and drop
