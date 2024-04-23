@@ -123,11 +123,12 @@ class KWorkThread(QThread):
                             logger.info('case_sensitive, no')
                             kfile.replace(checkWords, repWords)
 
-                        addWordsG5V = rvp_cus_g_5v.values()
-                        addWordsL5V = rvp_cus_l_5v.values()
-                        logger.info('>5V: %s', list(addWordsG5V))
-                        logger.info('<5V: %s', list(addWordsL5V))
-                        kfile.add_netnames_vs_5V(addWordsG5V, addWordsL5V)
+                        netnames_g_5v = rvp_cus_g_5v.values()
+                        netnames_l_5v = rvp_cus_l_5v.values()
+                        logger.info('>5V: %s', list(netnames_g_5v))
+                        logger.info('<5V: %s', list(netnames_l_5v))
+
+                        kfile.add_netnames_vs_5V(netnames_g_5v, netnames_l_5v)
 
                         self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
                         logger.info('emit signal back msg id: ' + str(msg[0]))

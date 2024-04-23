@@ -93,6 +93,10 @@ class KFile(object):
         start_check_end_of_obj = False
         is_greater_or_lesser = 1
 
+        # greater than 5v list has priority, if both present in two lists, only add it to > 5v
+        common_elements = set(new_names_g_5v) & set(new_names_l_5v)
+        new_names_l_5v = [x for x in new_names_l_5v if x not in common_elements]
+
         with open(self.file_name, 'r') as f_in:
             all_lines = f_in.readlines()
 
