@@ -87,18 +87,20 @@ class KAppBase(object):
             self.ui.pushButton_2.setEnabled(True)
             self.ui.pushButton_2.setText('Generate')
             self.ui.pushButton_2.setStyleSheet("color: black")
+            self.main_window.statusBar().showMessage('')
 
             if str(self.data2) == '0':
                 QMessageBox.information(self.main_window, 'Warning', 'Invalid dcfx format, please select correct dcfx')
                 self.config_dialog_mgr.exec()
                 return
 
-            if str(self.data2) == '2':
+            elif str(self.data2) == '2':
                 QMessageBox.information(self.main_window, 'Warning', self.table_mgr.dcfx_path + ' is not available.\nPlease check configuration folder')
                 self.config_dialog_mgr.exec()
                 return
 
-            self.main_window.statusBar().showMessage('New file generated successfully.', 10000)
+            else:
+                self.main_window.statusBar().showMessage('New file generated successfully.', 10000)
 
         if self.id == '3':
 
