@@ -699,6 +699,10 @@ class Table_Mgr:
                         self.ui.tableWidget.setSpan(start_row, col_catalogue, span_row_cnt, 1)
 
                 item = QTableWidgetItem(item_str)
+                if col == 0 or col == 1 or col == 3:
+                    # also work
+                    # item = QTableWidgetItem(item_str, flags=Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+                    item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
                 self.ui.tableWidget.setItem(row, col, item)
                 if col == 0:
                     self.ui.tableWidget.item(row, col).setBackground(QtGui.QColor(235, 235, 150))
