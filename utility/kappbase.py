@@ -14,9 +14,10 @@ import numpy as np
 
 class KAppBase(object):
     NetList_Table = r'Netlist comparision table.xlsx'
-    def __init__(self, ui, MainWindow):
+    def __init__(self, ui, MainWindow, app):
         self.ui = ui
         self.main_window = MainWindow
+        self.app = app
         self.splash_check()
 
         self.main_window.setWindowTitle('NetlistAutoMapper v0.3.1')
@@ -38,9 +39,28 @@ class KAppBase(object):
         self.config_dialog_mgr.sig_cfg_ui_2_main_ui.connect(self.config_dialog_sig_handler)
 
         self.ui.actionTool_Log.triggered['bool'].connect(self.open_log_folder)
-
+        self.app.aboutToQuit.connect(self.closeApplication)
 
         pass
+
+    def closeApplication(self):
+        # 在程序关闭时执行的操作
+        self.kwork_thread.send_work_message([8, self.table_mgr.multiArray, self.config_dialog_mgr.folder_path, self.currentSheetName])
+
+        elapsed_time = 0
+        start_time = time.time()
+        while not self.kwork_thread.finished:
+            elapsed_time = time.time() - start_time
+            logger.info('elapsed_time: %f', elapsed_time)
+            if elapsed_time >= 1:
+                print("Timeout reached. close app.")
+                break
+            time.sleep(0.1)  # 等待一段时间后再检查
+
+        logger.info('final elapsed_time: %f', elapsed_time)
+
+        # 在这里添加你想要执行的操作，例如保存数据、清理资源等
+        self.app.quit()
 
     def __del__(self):
         pass
@@ -112,14 +132,14 @@ class KAppBase(object):
             #self.table_mgr.set_signal_connect()
 
             if len(sheetNames) > 1:
-                sheetName = sheetNames[0]
+                self.currentSheetName = sheetNames[0]
             else:
-                sheetName = ''
+                self.currentSheetName = ''
                 # Pending fix
                 #QMessageBox.information(self.main_window, 'Warning', 'Invalid xlsx format, please select correct xlsx')
                 #self.config_dialog_mgr.exec()
 
-            self.kwork_thread.send_work_message([6, sheetName])
+            self.kwork_thread.send_work_message([6, self.currentSheetName])
 
             pass
 
@@ -130,7 +150,27 @@ class KAppBase(object):
             self.table_mgr.init_table_default()
             #self.table_mgr.init_table_reference()
 
+            self.kwork_thread.send_work_message([7, self.config_dialog_mgr.folder_path, self.currentSheetName])
             pass
+
+        if self.id == '7':
+            self.multiArray = self.data2
+            self.update_cus_col()
+            pass
+
+    def update_cus_col(self):
+        for row_idx, row in enumerate(self.multiArray):
+            try:
+                col_3_value = row[2]
+                col_5_value = row[4]
+
+                # 在表格中插入内容
+                self.ui.tableWidget.setItem(row_idx, 2, QTableWidgetItem(col_3_value))
+                self.ui.tableWidget.setItem(row_idx, 4, QTableWidgetItem(col_5_value))
+
+            except Exception as e:
+                logger.error('pyi_splash close error', exc_info=True)
+                pass
 
     def splash_check(self):
         # splash support close pic start
@@ -328,7 +368,7 @@ class Config_Dialog_Mgr(QDialog):
         self.child.checkBox_2.setVisible(False)
 
         self.kwork_thread.sig_to_config_dialog.connect(self.config_dialog_signal_handler)
-        # startup, load and check ini
+        # startup, auto load and check ini
         self.kwork_thread.send_work_message([4, 'data_4'])
 
     def checkBox_3_stateChanged(self):
@@ -544,6 +584,7 @@ class Icon_Mgr:
 
 class Table_Mgr:
     def __init__(self, kappbase):
+        self.kappbase = kappbase
         self.ui = kappbase.ui
         self.main_window = kappbase.main_window
         self.kwork_thread = kappbase.kwork_thread
@@ -551,22 +592,58 @@ class Table_Mgr:
 
         self.dcfx_path = ''
 
-        self.set_signal_connect()
+        self.ignoreOnce = True
+
+        self.combobox_set_signal_connect()
+        self.multiArray = []
 
         #self.init_table()
         #self.test_excel()
 
         #self.init_table_default()
         #self.kwork_thread.send_work_message([3, 'data_3'])
+        self.ui.tableWidget.itemChanged.connect(self.itemChanged)
 
-    def set_signal_connect(self):
-        self.ui.comboBox_3.currentIndexChanged.connect(self.selectionChange)
-    def selectionChange(self, i):
+    def itemChanged(self, item):
+        row = item.row()
+        column = item.column()
+
+        #print('changed row: ' + str(row))
+        #print('changed column: ' + str(column))
+
+        # 确保多维数组的大小和 TableWidget 一致
+        '''
+        if row >= len(self.multiArray):
+            self.multiArray.append([""] * self.ui.tableWidget.columnCount())
+        elif column >= len(self.multiArray[row]):
+            self.multiArray[row].extend([""] * (column - len(self.ui.multiArray[row]) + 1))
+        '''
+
+        # 获取修改后的值
+        new_value = item.text()
+        new_value = new_value.replace("\n", "")
+
+        # 更新多维数组中对应位置的值
+        self.multiArray[row][column] = new_value
+        # print("Multi-dimensional Array after change:", self.multiArray)
+
+    def combobox_set_signal_connect(self):
+        self.ui.comboBox_3.currentIndexChanged.connect(self.combobox_selectionChange)
+    def combobox_selectionChange(self, i):
+
         #打印被选中下拉框的内容
         print('current index', i, 'selection changed', self.ui.comboBox_3.currentText())
         self.dcfx_path = self.ui.comboBox_3.currentText()
-        self.kwork_thread.send_work_message([6, self.dcfx_path])
+        self.kappbase.currentSheetName = self.ui.comboBox_3.currentText()
+        if self.ignoreOnce != True:
+            self.kwork_thread.send_work_message([8, self.kappbase.table_mgr.multiArray, self.kappbase.config_dialog_mgr.folder_path, self.lastSheetName])
+            self.kappbase.table_mgr.multiArray = []
+            self.kwork_thread.send_work_message([6, self.dcfx_path])
+        else:
+            self.ignoreOnce = False
         pass
+
+        self.lastSheetName = self.kappbase.currentSheetName
 
     def init_table(self):
         nRows = 10
@@ -684,6 +761,9 @@ class Table_Mgr:
 
         t1 = self.ui.tableWidget.columnCount()
         t2 = self.ui.tableWidget.rowCount()
+
+        self.multiArray = [[None] * t1 for _ in range(t2)]
+
         for row in range(self.ui.tableWidget.rowCount()):
             for col in range(self.ui.tableWidget.columnCount()):
                 item_str = str(self.df.iat[row, col])
@@ -710,9 +790,10 @@ class Table_Mgr:
         # Enable sorting on the table
         # self.ui.tableWidget.setSortingEnabled(True)
         # Enable column moving by drag and drop
-        self.ui.tableWidget.horizontalHeader().setSectionsMovable(True)
+        # self.ui.tableWidget.horizontalHeader().setSectionsMovable(True)
 
         self.ui.tableWidget.resizeColumnsToContents()
+        logger.info('auto load complete')
         logger.info('init_table_default exit')
 
     def test_excel(self):

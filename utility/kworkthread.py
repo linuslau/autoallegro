@@ -21,6 +21,8 @@ class KWorkThread(QThread):
     NetList_Table = r'Netlist comparision table.xlsx'
     signal_to_main_ui = pyqtSignal(str, str, object)
     sig_to_config_dialog = pyqtSignal(str, str, str)
+
+    finished = False
     def __init__(self):
         super().__init__()
         self.queue = Queue()
@@ -50,6 +52,8 @@ class KWorkThread(QThread):
             logger.info('Receiving a new msg')
             logger.info('=========================')
             logger.info('content: ' + str(msg))
+
+            self.finished = False
 
             if len(msg) != 0:
                 logger.info('msg id: ' + str(msg[0]))
@@ -177,8 +181,90 @@ class KWorkThread(QThread):
                     df = self.get_sheet_df(self.file_name, sheetName)
                     self.signal_to_main_ui.emit(str(msg[0]), 'signal_6', df)
 
+                # read tmp cus value from a tmp file
+                if msg[0] == 7:
+                    multiArray = []
+                    path = msg[1]
+                    sheetName = msg[2]
+                    if path:
+                        fullpath = os.path.join(path + '/', sheetName + '.ini')
+                    else:
+                        fullpath = os.path.join('./', sheetName + '.ini')
+                    if os.path.exists(fullpath):
+                        multiArray = self.read_multi_array_from_file(fullpath)
+                    else:
+                        pass
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_7', multiArray)
+                    pass
+
+                # write tmp cus value to a tmp file
+                if msg[0] == 8:
+                    multiArray = msg[1]
+                    path = msg[2]
+                    sheetName = msg[3]
+                    if path:
+                        fullpath = os.path.join(path + '/', sheetName + '.ini')
+                    else:
+                        fullpath = os.path.join('./', sheetName + '.ini')
+
+                    self.write_multi_array_to_file(multiArray, fullpath)
+                    self.signal_to_main_ui.emit(str(msg[0]), 'signal_8', '')
+
+                    pass
+
+            self.finished = True
             self.queue.task_done()
             logger.info('=========================')
+
+    def write_multi_array_to_file(self, multi_array, filename):
+
+        if len(multi_array) != 0:
+            # 获取数组的形状
+            shape = (len(multi_array), len(multi_array[0]))
+
+            with open(filename, 'w') as file:
+                # 写入数组形状
+                file.write(f"{shape[0]} {shape[1]}\n")
+
+                # 逐行写入数组元素
+                for row in multi_array:
+                    row_str = ','.join(row)  # 将每行转换为字符串
+                    file.write(row_str + '\n')  # 写入文件
+
+    def read_multi_array_from_file(self, filename):
+        """
+        从文件中读取多维数组
+
+        参数:
+        filename: 要读取的文件名
+
+        返回:
+        读取到的多维数组
+        """
+        with open(filename, 'r') as file:
+            # 读取数组形状
+            shape_line = file.readline()
+            shape = tuple(map(int, shape_line.strip().split()))
+
+            '''
+            # 读取数组元素
+            multi_array = []
+            for _ in range(shape[0]):
+                line = file.readline().strip()
+                row = line.split(',')
+                multi_array.append(row)
+            '''
+
+            # 读取数组元素
+            multi_array = []
+            while True:
+                line = file.readline().strip()
+                if not line:
+                    break
+                row = line.split(',')
+                multi_array.append(row)
+
+            return multi_array
 
     def create_default_ini(self, file_path):
         logger.info('create_default_ini enter')
