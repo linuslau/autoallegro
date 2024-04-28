@@ -1,4 +1,5 @@
 
+import utility.global_variable as gv
 from utility.klogger import *
 from utility.kfile import *
 from utility.kxlsx import *
@@ -136,8 +137,10 @@ class KWorkThread(QThread):
                         logger.info('>5V: %s', list(netnames_g_5v))
                         logger.info('<5V: %s', list(netnames_l_5v))
 
-                        #kfile.add_netnames_vs_5V(netnames_g_5v, netnames_l_5v)
-                        kfile.add_to_file(netnames_g_5v, netnames_l_5v)
+                        if gv.FIVE_VOLTAGE_PATTERN:
+                            kfile.add_netnames_vs_5V(netnames_g_5v, netnames_l_5v)
+                        else:
+                            kfile.add_to_file(netnames_g_5v, netnames_l_5v)
 
                         self.signal_to_main_ui.emit(str(msg[0]), 'signal_2', 1)
                         logger.info('emit signal back msg id: ' + str(msg[0]))
