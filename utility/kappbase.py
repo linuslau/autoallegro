@@ -18,7 +18,7 @@ class KAppBase(object):
         self.ui = ui
         self.main_window = MainWindow
         self.app = app
-        self.splash_check()
+        #self.splash_check()
 
         self.main_window.setWindowTitle('NetlistAutoMapper v0.3.1')
 
@@ -27,7 +27,7 @@ class KAppBase(object):
         self.kwork_thread.signal_to_main_ui.connect(self.work_thread_signal_handler)
 
         self.ui_mgr = UI_Mgr(MainWindow)
-        self.ui_mgr.splash_check()
+        #self.ui_mgr.splash_check()
         self.software_mgr = Software_Mgr('NetlistAutoMapper', 'NetlistAutoMapper', MainWindow)
         self.software_mgr.check_software_version_background(self.ui_mgr)
         self.table_mgr = Table_Mgr(self)
