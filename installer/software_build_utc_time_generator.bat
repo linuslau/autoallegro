@@ -1,5 +1,7 @@
 @echo off
 
+cd ../
+
 call :getUTCTime
 echo %UTCTIMESTR%
 echo %UTCTIMESTR%> ./dependency/utc_time.txt
